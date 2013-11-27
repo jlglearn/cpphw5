@@ -159,28 +159,26 @@ void HexBoard::Reset(unsigned int n)
     {
         for (unsigned int c = 0; c < n; c++, iCell++)
         {   
-            if (r < (n - 1))                                            // unless bottom row, connect down and down-left
+            if (r < (n - 1))
             {
                 G.AddEdge(iCell, cellIndex(r + 1, c));                  // connect down                
                 if (c > 0) G.AddEdge(iCell, cellIndex(r + 1, c - 1));   // unless left-most column, connect down-left
+                if (r == 0) G.AddEdge(iCell, BLUEGOAL);                 // if top row, connect to BLUEGOAL                
             }
             else
             {
                 G.AddEdge(iCell, BLUEHOME);                             // if bottom row, connect to BLUEHOME
-            }
-            
-            if (c > 0) 
-                G.AddEdge(iCell, cellIndex(r, c - 1));                  // unless left-most column, connect left
-            else
-                G.AddEdge(iCell, REDHOME);                              // if left-most column, connect to REDHOME
+            }            
             
             if (c < (n - 1)) 
+            {
                 G.AddEdge(iCell, cellIndex(r, c + 1));                  // unless right-most column, connect right
+                if (c == 0) G.AddEdge(iCell, REDHOME);                  // if left-most column, connect to REDHOME                            
+            }
             else
+            {
                 G.AddEdge(iCell, REDGOAL);                              // if right-most column, connect to REDGOAL
-            
-            // if top row, connect to BLUEGOAL
-            if (r == 0) G.AddEdge(iCell, BLUEGOAL);
+            }
         }
     }
     

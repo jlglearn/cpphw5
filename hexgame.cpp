@@ -86,6 +86,7 @@ HexColor HexGame::Play(HexColor movesFirst)
     HexPlayer *players[2];
     HexColor  turns[2];
     HexColor  winner = HEXBLANK;
+    clock_t   clocks[2] = {0, 0};
 
     // assign a default player to any unregistered player
     if (pBluePlayer == (HexPlayer *)0)
@@ -128,7 +129,10 @@ HexColor HexGame::Play(HexColor movesFirst)
         {
             if (!options.mute) gameIO.Prompt(thisTurn);
             
+            clock_t tStart = clock();
             thisPlayer->Move(boardCopy, thisTurn, row, col);
+            clock_t tEnd = clock();
+            clocks[iTurn % 2] += (tEnd - tStart);
             
             // pass player's move to board manager
             result = board.SetColor(row, col, thisTurn);
@@ -153,6 +157,11 @@ HexColor HexGame::Play(HexColor movesFirst)
         }
     }
     
+    clocks[0] /= CLOCKS_PER_SEC;
+    clocks[1] /= CLOCKS_PER_SEC;
+    std::cout << "Total time elapsed playing:\n";
+    std::cout << ((movesFirst == HEXBLUE) ? "BLUE" : "RED") << ": " << clocks[0] << " (secs)\n"
+              << ((movesFirst == HEXBLUE) ? "RED" : "BLUE") << ": " << clocks[1] << " (secs)\n";
     return winner;
 }   
 

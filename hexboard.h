@@ -38,6 +38,14 @@ typedef struct structHexCell {
 
 typedef std::vector<HexCell> HexCellSet;
 
+
+// utility function to generate a random ordering of the numbers in the range:
+// [0, n) 0 (inclusive) to n (exclusive)
+void GenerateRandomOrdering(unsigned int n, std::vector<unsigned int> &vOrdering);
+
+
+ 
+
 /* ============================================================================ *
  * HexBoard class                                                               *
  * ============================================================================ */

@@ -16,7 +16,6 @@ class HexMCPlayer : public HexPlayer {
     virtual void Move(HexBoard &board, HexColor turn, unsigned int &row, unsigned int &col);
 };
 
-
 void HexMCPlayer::Move(HexBoard &board, HexColor turn, unsigned int &row, unsigned int &col)
 {    
     clock_t tStart = clock();
@@ -36,9 +35,7 @@ void HexMCPlayer::Move(HexBoard &board, HexColor turn, unsigned int &row, unsign
     std::random_shuffle(hcs.begin(), hcs.end());
         
     // precompute the order of moves during simulation
-    HexColor turns[2];
-    turns[0] = turn;
-    turns[1] = ((turn == HEXBLUE) ? HEXRED : HEXBLUE);    
+    HexColor turns[2] = {turn, ((turn == HEXBLUE) ? HEXRED : HEXBLUE)};
     
     // now evaluate each cell in turn
     for (unsigned int iCell = 0; iCell < nCells; iCell++)
@@ -73,16 +70,12 @@ void HexMCPlayer::Move(HexBoard &board, HexColor turn, unsigned int &row, unsign
                 boardCopy.SetColor(hcsCopy[thisMove].row, hcsCopy[thisMove].col, thisColor);                
             }
             
-            // find out who won this simulated game
-            HexColor winner = boardCopy.Winner();
-            
             // if we won, update stats
-            if (winner == turn)
-            {
+            if (boardCopy.Winner() == turn)
                 nWins++;
-            }
         }
         
+        // keep track of best score so far
         if (nWins > bestScore)
         {
             bestScore = nWins;
@@ -97,9 +90,10 @@ void HexMCPlayer::Move(HexBoard &board, HexColor turn, unsigned int &row, unsign
     }
     
     // return the best play we found
+    row = hcs[bestPlay].row;
+    col = hcs[bestPlay].col;
+    
     clock_t tEnd = clock();
     clock_t tElapsed = (tEnd - tStart) / CLOCKS_PER_SEC;
     std::cout << "Time elapsed: " << tElapsed << "(secs) \n";
-    row = hcs[bestPlay].row;
-    col = hcs[bestPlay].col;
 }

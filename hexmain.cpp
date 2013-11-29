@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <time.h>
 #include "hexboard.h"
 #include "hexmcplayer.hpp"
 
@@ -44,19 +43,9 @@ int main(int argc, char *argv[])
     HexMCPlayer *pBlue = new HexMCPlayer;
     HexMCPlayer *pRed  = new HexMCPlayer;    
   
-    clock_t tStart = clock();
     HexGame game(size);
     game.RegisterPlayer(pBlue, HEXBLUE);
     game.RegisterPlayer(pRed, HEXRED);
     HexColor winner = game.Play(HEXBLANK);
-    clock_t tEnd = clock();
-    clock_t tElapsed = (tEnd - tStart) / CLOCKS_PER_SEC;
-    
-    std::cout << "Total elapsed time for the game: " << tElapsed << " (secs)\n";
-    
-    if (winner == HEXBLUE)
-        blueWins++;
-    else
-        redWins++;      
 
 }

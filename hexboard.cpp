@@ -188,5 +188,3 @@ void HexBoard::Reset(unsigned int n)
     UF.Reset(n2+4);                                                     // allocate space in UF structure
 }
 
-
-            

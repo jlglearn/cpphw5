@@ -3,6 +3,7 @@
 #include <string>
 #include "hexboard.h"
 #include "hexmcplayer.hpp"
+#include "hexmc2player.hpp"
 
 static int readInt(const char *prompt, int minVal, int maxVal)
 {
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
     int redWins = 0;
     int blueWins = 0;
     
-    HexMCPlayer *pBlue = new HexMCPlayer;
+    HexMC2Player *pBlue = new HexMC2Player;
     HexMCPlayer *pRed  = new HexMCPlayer;    
   
     HexGame game(size);

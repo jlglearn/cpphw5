@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <queue>
+#include <algorithm>
 
 typedef unsigned int VertexID;
 typedef std::vector<VertexID> VertexIDSet;
@@ -28,7 +29,7 @@ class MinGraph {
     void AddEdge(VertexID u, VertexID v);
     bool HasPath(VertexID u, VertexID v, bool restrictToSimilar=false);    
     void Neighbors(VertexID v, VertexIDSet &vs, bool restrictToSimilar=false);
-    void SetVertexValue(VertexID v, T value);
+    T    SetVertexValue(VertexID v, T value);
     T    GetVertexValue(VertexID v);
     
     void Reset(int n);  
@@ -146,13 +147,14 @@ bool MinGraph<T>::HasPath(VertexID u, VertexID v, bool restrictToSimilar)
 /* ----------------------------------------------------------------------------
    void SetVertexValue(VertexID v, T value);
    
-   Set the value of the given vertex
+   Set the value of the given vertex.  Returns the previous value.
    ---------------------------------------------------------------------------- */
 template <class T>
-void MinGraph<T>::SetVertexValue(VertexID v, T value)
+T MinGraph<T>::SetVertexValue(VertexID v, T value)
 {
     if (v >= V()) throw MINGRAPH_ERR_INVALIDVERTEX;
-    VS[v].value = value;
+    std::swap(VS[v].value, value);
+    return value;
 }
 
 /* ----------------------------------------------------------------------------

@@ -48,23 +48,47 @@ HexMoveResult HexBoard::SetColor(unsigned int row, unsigned int col, HexColor co
         
     unsigned int iCell = cellIndex(row, col);
     
-    if (G.GetVertexValue(iCell) != HEXBLANK)
+    if ((G.GetVertexValue(iCell) != HEXBLANK) && !trialMode)
         return HEXMOVE_OCCUPIED;
         
-    G.SetVertexValue(iCell, color);
+    HexColor oldColor = G.SetVertexValue(iCell, color);
     
     if ((color == HEXBLUE) && (row == 0))
         G.SetVertexValue(BLUEGOAL, HEXBLUE);
     
     if ((color == HEXRED) && (col == (size - 1)))
         G.SetVertexValue(REDGOAL, HEXRED);
-    
-    VertexIDSet vs;
-    G.Neighbors(iCell, vs, true);                           // retrieve neighbors that have same color
-    
-    for (unsigned int i = 0; i < vs.size(); i++)
-        UF.Join(iCell, vs[i]);                              // and connect to them        
         
+        
+    if (trialMode)
+    {
+        // if in trial mode, whenever we overwrite a blue cell on the blue goal row, or
+        // a red cell on the red goal column, we need to check whether we also need to
+        // reset the goal virtual cells
+        
+        if ((row == 0) && (oldColor == HEXBLUE) && (color != HEXBLUE))
+        {
+            VertexIDSet vs;
+            G.Neighbors(BLUEGOAL, vs, true);
+            if (vs.size() == 0)
+            {
+                // no more blue cells connected to blue virtual goal, reset blue virtual goal color
+                G.SetVertexValue(BLUEGOAL, HEXBLANK);
+            }
+        }
+        
+        if ((col == (size - 1)) && (oldColor == HEXRED) && (color != HEXRED))
+        {
+            VertexIDSet vs;
+            G.Neighbors(REDGOAL, vs, true);
+            if (vs.size() == 0)
+            {
+                // no more red cells connected to blue virtual goal, reset red virtual goal color
+                G.SetVertexValue(REDGOAL, HEXBLANK);
+            }
+        }
+    }
+    
     return HEXMOVE_OK;
 }   
 
@@ -76,10 +100,42 @@ HexMoveResult HexBoard::SetColor(unsigned int row, unsigned int col, HexColor co
    ---------------------------------------------------------------------------- */
 HexColor HexBoard::Winner(void)
 {        
-    if (UF.Find(BLUEHOME) == UF.Find(BLUEGOAL))
+    if (trialMode)
+    {
+        // if in trial mode, the value of the goal virtual cells is not reliable, as
+        // it might be out of sync with the board if the connected cells were overwritten
+        
+        // first compute the right color for the goal cells
+        bool setColor = false;
+        for (unsigned int i = 0; i < size; i++)
+        {
+            if (GetColor(0, i) == HEXBLUE)
+            {
+                setColor = true;
+                break;
+            }
+        }
+        
+        G.SetVertexValue(BLUEGOAL, setColor ? HEXBLUE : HEXBLANK);
+        
+        setColor = false;
+        for (unsigned int i = 0; i < size; i++)
+        {
+            if (GetColor(i, 0) == HEXRED)
+            {
+                setColor = true;
+                break;
+            }
+        }
+        
+        G.SetVertexValue(REDGOAL, setColor ? HEXRED : HEXBLANK);
+    }
+    
+    if ((G.GetVertexValue(BLUEGOAL) == HEXBLUE) && G.HasPath(BLUEGOAL, BLUEHOME, true))
         return HEXBLUE;
-    if (UF.Find(REDHOME) == UF.Find(REDGOAL))
+    if ((G.GetVertexValue(REDGOAL) == HEXRED) && G.HasPath(REDGOAL, REDHOME, true))
         return HEXRED;
+        
     return HEXBLANK;
 }
 
@@ -134,6 +190,16 @@ void HexBoard::GetCells(HexCellSet &hcs, HexColor color)
 }
 
 /* ----------------------------------------------------------------------------
+   void HexBoard::SetTrialMode(void);
+   
+   Puts the board in trial mode.  In trial mode we allow overwriting cells, so
+   that repeated trials can be played on the same board.
+   ---------------------------------------------------------------------------- */
+void HexBoard::SetTrialMode(void)
+{   trialMode = true;   }
+
+   
+/* ----------------------------------------------------------------------------
    void HexBoard::Reset(unsigned int n)
    
    Clears all internal board states and creates an empty board of n x n cells.
@@ -184,7 +250,86 @@ void HexBoard::Reset(unsigned int n)
     
     // initialize HOME virtual cells to their respective colors
     G.SetVertexValue(BLUEHOME, HEXBLUE);
-    G.SetVertexValue(REDHOME, HEXRED);    
-    UF.Reset(n2+4);                                                     // allocate space in UF structure
+    G.SetVertexValue(REDHOME, HEXRED);  
+
+    trialMode = false;
 }
 
+/* ============================================================================
+   HexMoveGenerator class
+   
+   Computes the set of valid moves remaining on a board, and provides
+   a convenient access to a randomized sequence of those moves.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   HexMoveGenerator::HexMoveGenerator(HexBoard &board);
+   
+   constructor - computes the set of valid moves (unoccupied cells) remaining
+   on the board according to the state of the board at the time the constructor
+   is called.
+   ---------------------------------------------------------------------------- */
+HexMoveGenerator::HexMoveGenerator(HexBoard &board)
+{
+    // retrieve all unoccupied cells on the board
+    board.GetCells(hcs, HEXBLANK);
+    // shuffle them to randomize them
+    std::random_shuffle(hcs.begin(), hcs.end());
+    // set cursor to beginning of sequence
+    cursor = 0;
+}
+
+/* ----------------------------------------------------------------------------
+   bool HexMoveGenerator::Next(unsigned int &id, unsigned int &row, unsigned int &col);
+   
+   Returns one of the valid moves remaining on the sequence.
+   
+   Returns true on success, false if there were no more valid moves remaining.
+   
+   If successful, the following are returned using the by-reference parameters:
+        id: a move id, can be used to later retrieve the move using Get()
+        row: the row index
+        col: the col index
+   ----------------------------------------------------------------------------- */
+bool HexMoveGenerator::Next(unsigned int &id, unsigned int &row, unsigned int &col)
+{
+    if (cursor >= hcs.size()) return false;
+    row = hcs[cursor].row;
+    col = hcs[cursor].col;
+    id = cursor++;
+    return true;
+}
+
+/* -----------------------------------------------------------------------------
+   void HexMoveGenerator::Get(unsigned int id, unsigned int &row, unsigned int &col);
+   
+   Retrieve the move identified by the given id.  The move (row, col) is returned
+   using the by-reference parameters
+   ----------------------------------------------------------------------------- */
+void HexMoveGenerator::Get(unsigned int id, unsigned int &row, unsigned int &col)
+{
+    if (id >= hcs.size()) throw HEXBOARD_ERR_INVALIDCELL;
+    row = hcs[id].row;
+    col = hcs[id].col;
+}
+
+/* -----------------------------------------------------------------------------
+   unsigned int HexMoveGenerator::Count(void);
+   
+   Returns the number of valid moves remaining (at the time the constructor was
+   called).
+   ----------------------------------------------------------------------------- */
+unsigned int HexMoveGenerator::Count(void)
+{   return hcs.size();  }
+
+/* -----------------------------------------------------------------------------
+   void HexMoveGenerator::Shuffle();
+   
+   Reshuffles the sequence of remaining moves and resets the cursor to the first
+   move of the (newly shuffled) sequence.
+   ----------------------------------------------------------------------------- */
+void HexMoveGenerator::Shuffle(void)
+{
+    std::random_shuffle(hcs.begin(), hcs.end());
+    cursor = 0;
+}

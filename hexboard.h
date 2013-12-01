@@ -59,13 +59,15 @@ class HexBoard {
     unsigned int Size(void);
     HexColor Winner(void);
     void GetCells(HexCellSet &hcs, HexColor color=HEXBLANK);
+    void SetTrialMode(void);
 
     private:
     unsigned int size;    
     unsigned int BLUEHOME, BLUEGOAL, REDHOME, REDGOAL;
+    unsigned int blueCells, redCells, freeCells;
+    bool trialMode;
     
     MinGraph<HexColor> G;        
-    UnionFind UF;
     
     inline unsigned int cellIndex(unsigned int row, unsigned int col) { return row * size + col; }
     inline unsigned int rowFromIndex(unsigned int index) { return index / size; }
@@ -125,6 +127,24 @@ class HexGame {
     
     void Reset(unsigned int n);
     
+};
+
+/* ============================================================================
+   HexMoveGenerator class
+   
+   Computes the valid moves remaining on a board.
+   ============================================================================ */
+class HexMoveGenerator {
+    public:
+    HexMoveGenerator(HexBoard &board);
+    bool Next(unsigned int &id, unsigned int &row, unsigned int &col);
+    void Get(unsigned int id, unsigned int &row, unsigned int &col);
+    void Shuffle(void);
+    unsigned int Count(void);
+    
+    private:
+    HexCellSet hcs;
+    unsigned int cursor;
 };
 
 #endif

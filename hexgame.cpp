@@ -132,7 +132,10 @@ HexColor HexGame::Play(HexColor movesFirst)
             clock_t tStart = clock();
             thisPlayer->Move(boardCopy, thisTurn, row, col);
             clock_t tEnd = clock();
-            clocks[iTurn % 2] += (tEnd - tStart);
+            clock_t tElapsed = tEnd - tStart;
+            clocks[iTurn % 2] += tElapsed;
+            
+            std::cout << "Time elapsed: " << (tElapsed / CLOCKS_PER_SEC) << " (secs)\n";
             
             // pass player's move to board manager
             result = board.SetColor(row, col, thisTurn);

@@ -38,17 +38,18 @@ HexColor HexGame::RegisterPlayer(HexPlayer *p, HexColor color)
     if ((color != HEXBLANK) && (color != HEXBLUE) && (color != HEXRED))
         throw HEXGAME_ERR_INVALIDCOLOR;
         
-    if ((color == HEXBLANK) || ((color == HEXBLUE) && (pBluePlayer == (HexPlayer *)0)))
+    if (((color == HEXBLUE) || (color == HEXBLANK)) && (pBluePlayer == (HexPlayer *)0))
     {
         // register as blue player
         pBluePlayer = p;
+        std::cout << "Assigned BLUE\n";
         return HEXBLUE;
     }
-    
-    if ((color == HEXBLANK) || ((color == HEXRED) && (pRedPlayer == (HexPlayer *)0)))
+    else if (((color == HEXRED) || (color == HEXBLANK)) && (pRedPlayer == (HexPlayer *)0))
     {
         // register as red player
         pRedPlayer = p;
+        std::cout << "Assigned RED\n";
         return HEXRED;
     }
     
@@ -86,7 +87,6 @@ HexColor HexGame::Play(HexColor movesFirst)
     HexPlayer *players[2];
     HexColor  turns[2];
     HexColor  winner = HEXBLANK;
-    clock_t   clocks[2] = {0, 0};
 
     // assign a default player to any unregistered player
     if (pBluePlayer == (HexPlayer *)0)
@@ -129,13 +129,8 @@ HexColor HexGame::Play(HexColor movesFirst)
         {
             if (!options.mute) gameIO.Prompt(thisTurn);
             
-            clock_t tStart = clock();
+            // prompt player for move
             thisPlayer->Move(boardCopy, thisTurn, row, col);
-            clock_t tEnd = clock();
-            clock_t tElapsed = tEnd - tStart;
-            clocks[iTurn % 2] += tElapsed;
-            
-            std::cout << "Time elapsed: " << (tElapsed / CLOCKS_PER_SEC) << " (secs)\n";
             
             // pass player's move to board manager
             result = board.SetColor(row, col, thisTurn);
@@ -160,11 +155,6 @@ HexColor HexGame::Play(HexColor movesFirst)
         }
     }
     
-    clocks[0] /= CLOCKS_PER_SEC;
-    clocks[1] /= CLOCKS_PER_SEC;
-    std::cout << "Total time elapsed playing:\n";
-    std::cout << ((movesFirst == HEXBLUE) ? "BLUE" : "RED") << ": " << clocks[0] << " (secs)\n"
-              << ((movesFirst == HEXBLUE) ? "RED" : "BLUE") << ": " << clocks[1] << " (secs)\n";
     return winner;
 }   
 

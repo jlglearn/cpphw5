@@ -1,7 +1,6 @@
 #ifndef _HEXBOARD_H_
 #define _HEXBOARD_H_
 
-#include "unionfind.h"
 #include "mingraph.hpp"
 
 typedef enum enumHexColor {

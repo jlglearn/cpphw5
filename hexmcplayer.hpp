@@ -6,7 +6,7 @@
 
 
 // evaluate a proposed move and return its score
-static int EvaluateMove(HexBoard &b, HexColor turn, unsigned int row, unsigned int col, unsigned int nTrials)
+static int EvaluateMove(HexBoard &b, HexColor turn, unsigned int row, unsigned int col, unsigned int nTrials, int curMax)
 {
     // make a local working copy of the board
     HexBoard board(b);
@@ -23,7 +23,7 @@ static int EvaluateMove(HexBoard &b, HexColor turn, unsigned int row, unsigned i
     // obtain remaining unoccupied cells
     HexMoveGenerator mg(board);
             
-    int score = 0;
+    int score = nTrials;
     for (unsigned int iTrial = 0; iTrial < nTrials; iTrial++)
     {   
         unsigned int idMove, moveRow, moveCol;    
@@ -35,9 +35,13 @@ static int EvaluateMove(HexBoard &b, HexColor turn, unsigned int row, unsigned i
         for (unsigned int i = 0; mg.Next(idMove, moveRow, moveCol); i++)
             board.SetColor(moveRow, moveCol, turns[i % 2]);
                         
-        // check whether we (turn) won, and update stats
-        if (board.Winner() == turn)
-            score++;
+        // if we lost, decrease counter
+        if (board.Winner() != turn)
+            score--;
+            
+        // if score is already suboptimal, stop evaluation
+        if (score < curMax)
+            break;
     }
     
     return score;
@@ -68,7 +72,7 @@ void HexMCPlayer::Move(HexBoard &board, HexColor turn, unsigned int &row, unsign
     while (mg.Next(idPlay, trow, tcol))
     {
         // evaluate this move
-        score = EvaluateMove(board, turn, trow, tcol, nTrials);
+        score = EvaluateMove(board, turn, trow, tcol, nTrials, bestScore);
         
         // keep track of best score so far
         if (score > bestScore)
